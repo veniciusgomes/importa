@@ -1,5 +1,6 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("node:path");
+const db = require("./database.js");
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -9,10 +10,13 @@ if (require("electron-squirrel-startup")) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
+    autoHideMenuBar: true,
     width: 800,
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: true,
+      contextIsolation: false,
     },
   });
 
@@ -20,8 +24,17 @@ const createWindow = () => {
   mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 };
+
+ipcMain.handle("get-users", async () => {
+  return new Promise((resolve, reject) => {
+    db.all("SELECT * FROM users", (err, rows) => {
+      if (err) reject(err);
+      resolve(rows);
+    });
+  });
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

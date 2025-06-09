@@ -10,8 +10,13 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "webpack": "webpack --config webpack.config.js",
-    "dev":"npm run webpack && electron .", 
+    "dev": "npm run webpack && electron .",
     "lint": "echo \"No linting configured\""
+  },
+  "browser": {
+    "fs": false,
+    "os": false,
+    "path": false
   },
   "keywords": [],
   "author": {
@@ -20,9 +25,13 @@
   },
   "license": "MIT",
   "dependencies": {
+    "better-sqlite3": "^11.10.0",
     "electron-squirrel-startup": "^1.0.1",
+    "fs": "^0.0.1-security",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.2",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.27.4",
