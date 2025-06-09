@@ -1,55 +1,27 @@
 {
-  "name": "importa",
-  "productName": "importa",
+  "name": "importa-app",
   "version": "1.0.0",
-  "description": "My Electron application description",
-  "main": "src/index.js",
+  "main": "main.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "webpack": "webpack --config webpack.config.js",
-    "dev": "npm run webpack && electron .",
-    "lint": "echo \"No linting configured\""
+    "start": "webpack && electron ."
   },
-  "browser": {
-    "fs": false,
-    "os": false,
-    "path": false
-  },
-  "keywords": [],
-  "author": {
-    "name": "Venicius Gomes",
-    "email": "viniciusgomes.santiago@gmail.com"
-  },
-  "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "^11.10.0",
-    "electron-squirrel-startup": "^1.0.1",
-    "fs": "^0.0.1-security",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.2",
-    "sqlite3": "^5.1.7"
+    "electron": "^28.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.27.4",
-    "@babel/preset-env": "^7.27.2",
-    "@babel/preset-react": "^7.27.1",
-    "@electron-forge/cli": "^7.8.1",
-    "@electron-forge/maker-deb": "^7.8.1",
-    "@electron-forge/maker-rpm": "^7.8.1",
-    "@electron-forge/maker-squirrel": "^7.8.1",
-    "@electron-forge/maker-zip": "^7.8.1",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
-    "@electron-forge/plugin-fuses": "^7.8.1",
-    "@electron/fuses": "^1.8.0",
-    "babel-loader": "^10.0.0",
-    "electron": "36.4.0",
-    "html-webpack-plugin": "^5.6.3",
-    "webpack": "^5.99.9",
-    "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.2.2"
+    "autoprefixer": "^10.4.0",
+    "css-loader": "^6.8.1",
+    "postcss": "^8.4.0",
+    "postcss-loader": "^7.0.0",
+    "style-loader": "^3.3.3",
+    "tailwindcss": "^3.4.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "babel-loader": "^9.1.3",
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "@babel/preset-react": "^7.22.15"
   }
 }
