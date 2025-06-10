@@ -1,10 +1,15 @@
-import React from 'react';
+import React from "react";
+import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Home from "./pages/home";
+import Page2 from "./pages/page2";
 
 export default function App() {
   return (
-    <div className="bg-blue-600 text-white p-4 rounded-lg m-4">
-      <h1 className="text-xl font-bold">App de Importação</h1>
-      <p>Tailwind e React funcionando com Electron 🎉</p>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/page2" element={<Page2 />} />
+      </Routes>
+    </Router>
   );
 }
