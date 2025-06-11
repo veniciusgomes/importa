@@ -1,25 +1,17 @@
 import React from "react";
 import { SideBar } from "../components/sidebar";
+import Header from "../components/header";
 
 export default function Home() {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <SideBar></SideBar>
+      <SideBar />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white shadow p-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <span className="text-gray-700 font-medium">Olá, Usuário</span>
-            <select className="border rounded px-2 py-1">
-              <option>PT</option>
-              <option>EN</option>
-            </select>
-          </div>
-        </header>
-
+        <Header texto={"Olá, usuário"} />
         {/* Central Content */}
         <main className="p-6 space-y-6 overflow-y-auto">
           {/* Estatísticas rápidas */}

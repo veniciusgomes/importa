@@ -9,12 +9,9 @@ export const SideBar = () => {
         <Link className="hover:text-blue-600" to="/">
           Início
         </Link>
-        <Link className="hover:text-blue-600" to="/page2">
-          page2
-        </Link>
-        <a href="#" className="hover:text-blue-600">
+        <Link className="hover:text-blue-600" to="/novaImportacao">
           Nova Importação
-        </a>
+        </Link>
         <a href="#" className="hover:text-blue-600">
           Lotes Anteriores
         </a>
