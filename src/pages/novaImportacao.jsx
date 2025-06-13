@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { SideBar } from "../components/sidebar";
 import Header from "../components/header";
 
-export default function NovaImportacao() {
+export default function CalculoTaxa() {
   const [valorDeclarado, setValorDeclarado] = useState(0);
   const [valorSeguro, setValorSeguro] = useState(0);
   const [valorFrete, setValorFrete] = useState(0);

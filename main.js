@@ -12,7 +12,7 @@ function createWindow() {
   });
   win.loadFile("public/index.html");
   //mostrar console
-  //win.webContents.openDevTools();
+  win.webContents.openDevTools();
 }
 Menu.setApplicationMenu(false);
 
