@@ -9,7 +9,7 @@ export const SideBar = () => {
         <Link className="hover:text-blue-600" to="/">
           Início
         </Link>
-        <Link className="hover:text-blue-600" to="/calculoTaxa">
+        <Link className="hover:text-blue-600" to="/calculadoras">
           Calculadoras
         </Link>
         <Link className="hover:text-blue-600" to="/estoque">
