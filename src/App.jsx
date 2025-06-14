@@ -2,7 +2,7 @@ import React from "react";
 import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/home";
 import CalculoTaxa from "./pages/novaImportacao";
-import Lotes from "./pages/lote";
+import Estoque from "./pages/estoque";
 
 export default function App() {
   return (
@@ -10,7 +10,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/calculoTaxa" element={<CalculoTaxa />} />
-        <Route path="/lotes" element={<Lotes />} />
+        <Route path="/estoque" element={<Estoque />} />
       </Routes>
     </Router>
   );

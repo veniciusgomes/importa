@@ -12,8 +12,8 @@ export const SideBar = () => {
         <Link className="hover:text-blue-600" to="/calculoTaxa">
           Calculo taxa Importação
         </Link>
-        <Link className="hover:text-blue-600" to="/lotes">
-          Lotes
+        <Link className="hover:text-blue-600" to="/estoque">
+          Estoque
         </Link>
         <a href="#" className="hover:text-blue-600">
           Configurações
