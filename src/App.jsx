@@ -4,6 +4,7 @@ import Home from "./pages/home";
 import Calculadoras from "./pages/calculadoras";
 import Estoque from "./pages/estoque";
 import Lotes from "./pages/lotes";
+import Financeiro from "./pages/financeiro";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/calculadoras" element={<Calculadoras />} />
         <Route path="/estoque" element={<Estoque />} />
         <Route path="/lotes" element={<Lotes />} />
+        <Route path="/financeiro" element={<Financeiro />} />
       </Routes>
     </Router>
   );

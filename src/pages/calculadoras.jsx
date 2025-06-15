@@ -19,7 +19,6 @@ export default function Calculadoras() {
   const [valorCaixa, setValorCaixa] = useState(0);
   const [resultado, setResultado] = useState(null);
   const [pesoCaixa, setPesoCaixa] = useState(0);
-  const [quantidadeItensDeclarados, setQuantidadeItensDeclarados] = useState(0);
 
   const handleCalcularTaxa = () => {
     var frete = (peso * valorCaixa) / pesoCaixa;
@@ -92,18 +91,6 @@ export default function Calculadoras() {
                   type="number"
                   onChange={(e) =>
                     setValorFreteDeclarado(parseFloat(e.target.value))
-                  }
-                  className="w-full border rounded px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 text-sm font-medium">
-                  Quantidade de itens Declarados
-                </label>
-                <input
-                  type="number"
-                  onChange={(e) =>
-                    setQuantidadeItensDeclarados(parseFloat(e.target.value))
                   }
                   className="w-full border rounded px-3 py-2"
                 />

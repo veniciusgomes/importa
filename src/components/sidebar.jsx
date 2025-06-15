@@ -18,12 +18,9 @@ export const SideBar = () => {
         <Link className="hover:text-blue-600" to="/lotes">
           Lotes
         </Link>
-        <a href="#" className="hover:text-blue-600">
-          Configurações
-        </a>
-        <a href="#" className="hover:text-blue-600">
-          Ajuda/Suporte
-        </a>
+        <Link className="hover:text-blue-600" to="/financeiro">
+          Financeiro
+        </Link>
       </nav>
     </aside>
   );
