@@ -16,7 +16,7 @@ function createWindow() {
   win.show(); // mostra a janela após maximizar
   win.loadFile("public/index.html");
   //mostrar console
-  //win.webContents.openDevTools();
+  win.webContents.openDevTools();
 }
 Menu.setApplicationMenu(false);
 
