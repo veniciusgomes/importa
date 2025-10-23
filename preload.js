@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   salvarLote: (lote, itens) => ipcRenderer.invoke("salvar-lote", lote, itens),
   getLotesComItens: () => ipcRenderer.invoke("getLotesComItens"),
   excluirLote: (id) => ipcRenderer.invoke("excluirLote", id),
+  getConfig: () => ipcRenderer.invoke("config:get"),
 });

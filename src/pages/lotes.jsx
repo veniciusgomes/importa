@@ -12,7 +12,7 @@ export default function Lotes() {
   const [lotes, setLotes] = useState([]);
   const [freteDeclarado, setFreteDeclarado] = useState(0);
   const [seguro, setSeguro] = useState(0);
-  const [taxasFixas] = useState({ icms: 17, importacao: 60 });
+  const [taxasFixas] = useState({ icms: 20, importacao: 60 });
   const [valorFrete, setValorFrete] = useState(0);
   const [importacao, setImportacao] = useState(0);
   const [icms, setIcms] = useState(0);
@@ -80,12 +80,12 @@ export default function Lotes() {
   };
 
   const pesoTotal = itensSelecionados.reduce(
-    (total, item) => total + parseFloat(item.peso),
+    (total, item) => total + parseFloat(item.peso * item.quantidade),
     0
   );
 
   const valorTotalDeclarado = itensSelecionados.reduce(
-    (total, item) => total + parseFloat(item.valorDeclarado),
+    (total, item) => total + parseFloat(item.valorDeclarado * item.quantidade),
     0
   );
 
@@ -98,11 +98,6 @@ export default function Lotes() {
   const salvarLote = async () => {
     if (!dataLote || !valorDolar || itensSelecionados.length === 0) return;
 
-    console.log("valorTotalDeclarado:", valorTotalDeclarado);
-    console.log("seguro:", seguro);
-    console.log("freteDeclarado:", freteDeclarado);
-    console.log("valorDolar:", valorDolar);
-
     var frete = (pesoTotal * valorCaixaUSCLOSER) / pesoCaixaUSCLOSER;
     setValorFrete(frete * valorDolar);
 
@@ -110,14 +105,19 @@ export default function Lotes() {
       (valorTotalDeclarado + seguro + freteDeclarado) *
       valorDolar *
       (taxasFixas.importacao / 100);
+
     setImportacao(taxaImportacao);
-    var taxaIcms =
-      (valorTotalDeclarado +
-        seguro +
-        freteDeclarado +
-        taxaImportacao / (1 - taxasFixas.icms / 100)) *
-      (taxasFixas.icms / 100);
-    setIcms(taxaIcms);
+
+    var valorAduaneiro =
+      (valorTotalDeclarado + seguro + freteDeclarado) * valorDolar;
+
+    var baseCalculo = valorAduaneiro + taxaImportacao;
+
+    const aliquotaDecimal = taxasFixas.icms / 100;
+
+    const icms = (baseCalculo / (1 - aliquotaDecimal)) * aliquotaDecimal;
+
+    setIcms(icms);
 
     const lote = {
       data_criacao: dataLote,
@@ -126,9 +126,9 @@ export default function Lotes() {
       peso_caixa_uscloser: pesoCaixaUSCLOSER,
       frete_declarado: freteDeclarado,
       seguro: seguro,
-      frete_lote: frete,
+      frete_lote: frete * valorDolar,
       valor_importacao: taxaImportacao,
-      valor_icms: taxaIcms,
+      valor_icms: icms,
     };
 
     await window.electronAPI.salvarLote(lote, itensSelecionados);
@@ -346,8 +346,9 @@ export default function Lotes() {
                   </thead>
                   <tbody>
                     {lote.itens.map((item) => {
-                      var pesoTotalAux = lote.itens.reduce(
-                        (total, item) => total + parseFloat(item.peso),
+                      var valorTotalDeclaradoAux = lote.itens.reduce(
+                        (total, item) =>
+                          total + parseFloat(item.valorDeclarado),
                         0
                       );
 
@@ -355,16 +356,18 @@ export default function Lotes() {
                         (item.peso * lote.valorCaixa) / lote.pesoCaixa;
 
                       var impostoProporcional =
-                        (lote.valorImportacao * item.peso) / pesoTotalAux;
+                        (lote.valorImportacao * item.valorDeclarado) /
+                        valorTotalDeclaradoAux;
 
                       var icmsProporcional =
-                        (lote.valorICMS * item.peso) / pesoTotalAux;
+                        (lote.valorICMS * item.valorDeclarado) /
+                        valorTotalDeclaradoAux;
 
                       var custoItem =
                         (item.valorCompra * lote.dolar +
                           impostoProporcional +
                           icmsProporcional +
-                          valorFrete) *
+                          valorFrete * lote.dolar) *
                         item.quantidade;
                       return (
                         <tr key={item.id} className="border-b">

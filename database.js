@@ -1,9 +1,11 @@
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 const { app, BrowserWindow, ipcMain } = require("electron");
+const fs = require("fs");
 
 // Caminho do banco (será criado no primeiro uso)
-const dbPath = path.join(__dirname, "data.sqlite");
+const userDataPath = app.getPath("userData");
+const dbPath = path.join(userDataPath, "data.sqlite");
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -167,6 +169,39 @@ ipcMain.handle("getLotesComItens", async () => {
     });
   });
 });
+
+// --- LÓGICA DE CONFIGURAÇÃO ---
+const configPath = path.join(userDataPath, "config.json");
+const defaultConfig = {
+  taxa_icms: 20,
+  taxa_importacao: 60,
+  default_valor_por_libra: 9.132666666666667,
+};
+
+function getConfig() {
+  try {
+    // Verifica se o arquivo existe
+    if (fs.existsSync(configPath)) {
+      // Se existe, lê
+      const rawdata = fs.readFileSync(configPath);
+      return JSON.parse(rawdata);
+    } else {
+      // Se não existe, cria com os padrões
+      fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+      return defaultConfig;
+    }
+  } catch (error) {
+    console.error("Erro ao ler/criar config.json:", error);
+    return defaultConfig;
+  }
+}
+
+// Novo IPC Handler para o frontend pedir a configuração
+ipcMain.handle("config:get", () => {
+  return getConfig();
+});
+
+// --- FIM DA LÓGICA DE CONFIGURAÇÃO ---
 
 ipcMain.handle("excluirLote", async (event, loteId) => {
   return new Promise((resolve, reject) => {

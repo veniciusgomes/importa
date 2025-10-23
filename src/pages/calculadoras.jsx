@@ -1,43 +1,69 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Importe o useEffect
 import { SideBar } from "../components/sidebar";
 import Header from "../components/header";
 
 export default function Calculadoras() {
-  const [valorItemDeclarado, setValorItemDeclarado] = useState(0);
+  // --- ESTADO DOS INPUTS ---
   const [valorItem, setValorItem] = useState(0);
-
-  const [valorFrete, setValorFrete] = useState(0);
+  const [valorItemDeclarado, setValorItemDeclarado] = useState(0);
+  const [valorSeguro, setValorSeguro] = useState(0);
   const [valorFreteDeclarado, setValorFreteDeclarado] = useState(0);
 
-  const [valorSeguro, setValorSeguro] = useState(0);
-  const [peso, setPeso] = useState(0);
-  const [taxasFixas] = useState({ icms: 17, importacao: 60 });
-  const [valorImportacao, setImportacao] = useState(0.0);
-  const [valorIcms, setIcms] = useState(0.0);
-  const [valorTotal, setTotal] = useState(0.0);
+  // AJUSTE: O valor inicial virá do config
+  const [valorPorLibra, setValorPorLibra] = useState(0);
   const [valorDolar, setValorDolar] = useState(0);
-  const [valorCaixa, setValorCaixa] = useState(0);
+  const [peso, setPeso] = useState(0);
+
+  // AJUSTE: O valor inicial virá do config
+  const [taxasFixas, setTaxasFixas] = useState({ icms: 0, importacao: 0 });
   const [resultado, setResultado] = useState(null);
-  const [pesoCaixa, setPesoCaixa] = useState(0);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      const config = await window.electronAPI.getConfig();
+      setTaxasFixas({
+        icms: config.taxa_icms,
+        importacao: config.taxa_importacao,
+      });
+      setValorPorLibra(config.default_valor_por_libra);
+    };
+    loadConfig();
+  }, []); // [] = Executa apenas uma vez, quando o componente montar
 
   const handleCalcularTaxa = () => {
-    var frete = (peso * valorCaixa) / pesoCaixa;
-    setValorFrete(frete * valorDolar);
-    var taxaImportacao =
-      (valorItemDeclarado + valorSeguro + valorFreteDeclarado) *
-      valorDolar *
-      (taxasFixas.importacao / 100);
-    setImportacao(taxaImportacao);
-    var taxaIcms =
-      (valorItemDeclarado +
-        valorSeguro +
-        valorFreteDeclarado +
-        taxaImportacao / (1 - taxasFixas.icms / 100)) *
-      (taxasFixas.icms / 100);
-    setIcms(taxaIcms);
-    var valorTotalItem =
-      valorItem * valorDolar + taxaImportacao + taxaIcms + frete;
-    setTotal(valorTotalItem);
+    // AJUSTE 3: Validação de inputs básicos
+    if (valorDolar <= 0 || valorItem <= 0 || peso <= 0) {
+      alert("Preencha Dólar, Valor do Item e Peso para calcular.");
+      setResultado(null);
+      return;
+    }
+
+    // AJUSTE 4: Fazemos TODOS os cálculos com variáveis locais.
+    // Não usamos mais setValorFrete, setImportacao, etc.
+    const freteUSD = peso * valorPorLibra;
+    const freteBRL = freteUSD * valorDolar;
+
+    const aduaneiroUSD = valorItemDeclarado + valorSeguro + valorFreteDeclarado;
+    const aduaneiroBRL = aduaneiroUSD * valorDolar;
+
+    const importacaoBRL = aduaneiroUSD * (taxasFixas.importacao / 100) * valorDolar;
+
+    const baseCalculo = aduaneiroBRL + importacaoBRL;
+
+    const aliquotaDecimal = taxasFixas.icms / 100;
+    const icmsBRL = (baseCalculo / (1 - aliquotaDecimal)) * aliquotaDecimal;
+
+    const totalBRL =
+      (valorItem * valorDolar) + importacaoBRL + icmsBRL + freteBRL;
+
+    // AJUSTE 5: Salvamos o objeto de resultado completo no estado
+    setResultado({
+      freteBRL,
+      aduaneiroBRL,
+      importacaoBRL,
+      icmsBRL,
+      totalBRL,
+    });
   };
 
   return (
@@ -56,7 +82,8 @@ export default function Calculadoras() {
                   Valor Item (USD)
                 </label>
                 <input
-                  onChange={(e) => setValorItem(parseFloat(e.target.value))}
+                  // AJUSTE 6: Usamos || 0 para evitar NaN se o campo for apagado
+                  onChange={(e) => setValorItem(parseFloat(e.target.value) || 0)}
                   type="number"
                   className="w-full border rounded px-3 py-2"
                 />
@@ -67,7 +94,7 @@ export default function Calculadoras() {
                 </label>
                 <input
                   onChange={(e) =>
-                    setValorItemDeclarado(parseFloat(e.target.value))
+                    setValorItemDeclarado(parseFloat(e.target.value) || 0)
                   }
                   type="number"
                   className="w-full border rounded px-3 py-2"
@@ -79,7 +106,7 @@ export default function Calculadoras() {
                 </label>
                 <input
                   type="number"
-                  onChange={(e) => setValorSeguro(parseFloat(e.target.value))}
+                  onChange={(e) => setValorSeguro(parseFloat(e.target.value) || 0)}
                   className="w-full border rounded px-3 py-2"
                 />
               </div>
@@ -90,31 +117,9 @@ export default function Calculadoras() {
                 <input
                   type="number"
                   onChange={(e) =>
-                    setValorFreteDeclarado(parseFloat(e.target.value))
+                    setValorFreteDeclarado(parseFloat(e.target.value) || 0)
                   }
                   className="w-full border rounded px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Valor da Caixa USCLOSER (USD)
-                </label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2"
-                  value={valorCaixa}
-                  onChange={(e) => setValorCaixa(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Peso da Caixa USCLOSER (lbs)
-                </label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2"
-                  value={pesoCaixa}
-                  onChange={(e) => setPesoCaixa(e.target.value)}
                 />
               </div>
               <div>
@@ -123,7 +128,7 @@ export default function Calculadoras() {
                 </label>
                 <input
                   type="number"
-                  onChange={(e) => setValorDolar(parseFloat(e.target.value))}
+                  onChange={(e) => setValorDolar(parseFloat(e.target.value) || 0)}
                   className="w-full border rounded px-3 py-2"
                 />
               </div>
@@ -133,7 +138,8 @@ export default function Calculadoras() {
                 </label>
                 <input
                   type="number"
-                  onChange={(e) => setPeso(e.target.value)}
+                  // AJUSTE 9: Adicionado parseFloat que faltava
+                  onChange={(e) => setPeso(parseFloat(e.target.value) || 0)}
                   className="w-full border rounded px-3 py-2"
                 />
               </div>
@@ -141,22 +147,28 @@ export default function Calculadoras() {
                 <button
                   type="button"
                   className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-                  onClick={(x) => handleCalcularTaxa()}
+                  onClick={handleCalcularTaxa} // Removido (x) => desnecessário
                 >
                   Calcular
                 </button>
               </div>
             </form>
-            <div className="mt-4 text-sm text-gray-700">
-              <p>Alíquota de Importação: {taxasFixas.importacao}%</p>
-              <p>Alíquota de ICMS: {taxasFixas.icms}%</p>
-              <p>Frete: R$ {valorFrete.toFixed(2)}</p>
-              <p>Imposto de Importação: R$ {valorImportacao.toFixed(2)}</p>
-              <p>ICMS: R$ {valorIcms.toFixed(2)}</p>
-              <p className="font-semibold mt-2">
-                Total Estimado: R$ {valorTotal.toFixed(2)}
-              </p>
-            </div>
+
+            {/* AJUSTE 10: O resultado só é exibido se o objeto 'resultado' existir */}
+            {resultado && (
+              <div className="mt-4 text-sm text-gray-700">
+                <p>Simulação leva em conta o Packet Standard® da USCloser que possui uma media de {valorPorLibra}/lb</p>
+                <p>Alíquota de Importação: {taxasFixas.importacao}%</p>
+                <p>Alíquota de ICMS: {taxasFixas.icms}%</p>
+                <p>Valor aduaneiro: R$ {resultado.aduaneiroBRL.toFixed(2)}</p>
+                <p>Frete: R$ {resultado.freteBRL.toFixed(2)}</p>
+                <p>Imposto de Importação: R$ {resultado.importacaoBRL.toFixed(2)}</p>
+                <p>ICMS: R$ {resultado.icmsBRL.toFixed(2)}</p>
+                <p className="font-semibold mt-2">
+                  Total Estimado: R$ {resultado.totalBRL.toFixed(2)}
+                </p>
+              </div>
+            )}
           </section>
         </main>
       </div>

@@ -14,7 +14,9 @@ function createWindow() {
 
   win.maximize(); // maximiza a janela
   win.show(); // mostra a janela após maximizar
-  win.loadFile("public/index.html");
+  //win.loadFile("public/index.html");
+  win.loadFile(path.join(__dirname, "public/index.html"));
+
   //mostrar console
   win.webContents.openDevTools();
 }
