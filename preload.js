@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getLotesComItens: () => ipcRenderer.invoke("getLotesComItens"),
   excluirLote: (id) => ipcRenderer.invoke("excluirLote", id),
   getConfig: () => ipcRenderer.invoke("config:get"),
+  updateItem: (item) => ipcRenderer.invoke("estoque:update", item),
 });

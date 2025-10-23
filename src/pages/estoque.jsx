@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { SideBar } from "../components/sidebar";
 import Header from "../components/header";
+import ItemDetailsModal from "../components/ItemDetailsModal";
+
+function formatarDataBR(dataString) {
+  if (!dataString) return "N/A";
+  const [ano, mes, dia] = dataString.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
 
 export default function Estoque() {
   const [items, setItems] = useState([]);
@@ -14,6 +21,10 @@ export default function Estoque() {
     taxas: "",
     valorDolar: "",
   });
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // <-- ADICIONE ESTA LINHA
 
   // Carrega os itens do banco ao iniciar
   useEffect(() => {
@@ -65,6 +76,32 @@ export default function Estoque() {
   const handleRemoveItem = async (id) => {
     await window.electronAPI.deleteItem(id);
     loadItems();
+  };
+
+  // 3. FUNÇÕES PARA CONTROLAR O MODAL
+  const handleOpenDetails = (item) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
+
+
+  const handleSaveEditedItem = async (editedItem) => {
+    setIsLoading(true); // Opcional: desabilita botões enquanto salva
+    try {
+      await window.electronAPI.updateItem(editedItem);
+      await loadItems(); // Recarrega todos os itens para atualizar a tabela
+      alert("Item atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar item editado:", error);
+      alert("Erro ao atualizar item.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -140,8 +177,15 @@ export default function Estoque() {
                       </td>
                       <td className="p-2">${i.valorDeclarado}</td>
                       <td className="p-2">{i.quantidade}</td>
-                      <td className="p-2">{i.dataCompra}</td>
+                      <td className="p-2">{formatarDataBR(i.dataCompra)}</td>
                       <td className="p-2">
+                        {/* 4. ADICIONAR O BOTÃO DE DETALHES */}
+                        <button
+                          onClick={() => handleOpenDetails(i)}
+                          className="text-blue-600 hover:underline mr-3" // mr-3 = margem direita
+                        >
+                          Detalhes
+                        </button>
                         <button
                           onClick={() => handleRemoveItem(i.id)}
                           className="text-red-600 hover:underline"
@@ -164,6 +208,15 @@ export default function Estoque() {
           </main>
         </div>
       </div>
+
+      {/* 5. RENDERIZAR O MODAL (fora do <main>) */}
+      {isModalOpen && (
+        <ItemDetailsModal
+          item={selectedItem}
+          onClose={handleCloseDetails}
+          onSave={handleSaveEditedItem}
+        />
+      )}
     </div>
   );
 }

@@ -170,6 +170,44 @@ ipcMain.handle("getLotesComItens", async () => {
   });
 });
 
+ipcMain.handle("estoque:update", async (event, item) => {
+  // 'item' aqui é o objeto camelCase vindo do React
+  return new Promise((resolve, reject) => {
+    db.run(
+      `UPDATE estoque SET
+        nome_item = ?,
+        valor_compra = ?,
+        valor_declarado = ?,
+        peso = ?,
+        quantidade = ?,
+        data_compra = ?,
+        taxas = ?,
+        valor_dolar = ?
+      WHERE id = ?`,
+      [
+        // AJUSTE: Ler as propriedades camelCase (ex: item.nome)
+        item.nome,
+        item.valorCompra,
+        item.valorDeclarado,
+        item.peso,
+        item.quantidade,
+        item.dataCompra,
+        item.taxas,
+        item.valorDolar,
+        item.id,
+      ],
+      function (err) {
+        if (err) {
+          console.error("Erro ao atualizar item:", err.message);
+          reject(err);
+        } else {
+          resolve({ id: this.lastID, changes: this.changes });
+        }
+      }
+    );
+  });
+});
+
 // --- LÓGICA DE CONFIGURAÇÃO ---
 const configPath = path.join(userDataPath, "config.json");
 const defaultConfig = {
