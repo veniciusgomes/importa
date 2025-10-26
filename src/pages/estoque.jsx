@@ -48,34 +48,61 @@ export default function Estoque() {
   };
 
   const handleAddItem = async () => {
-    const novoItem = {
-      nome_item: item.nome,
-      valor_compra: parseFloat(item.valorCompra.replace(",", ".")),
-      valor_declarado: parseFloat(item.valorDeclarado.replace(",", ".")),
-      peso: parseFloat(item.peso.replace(",", ".")),
-      quantidade: parseInt(item.quantidade),
-      data_compra: item.dataCompra,
-      valor_dolar: parseFloat(item.valorDolar.replace(",", ".")),
-      taxas: parseFloat(item.taxas.replace(",", ".")),
-    };
+    // Validação de inputs (sugestão da revisão anterior)
+    if (isNaN(parseFloat(item.valorCompra)) || !item.nome) {
+      alert("Por favor, preencha pelo menos o Nome e o Valor da Compra.");
+      return;
+    }
 
-    await window.electronAPI.addItem(novoItem);
-    setItem({
-      nome: "",
-      valorCompra: "",
-      valorDeclarado: "",
-      peso: "",
-      quantidade: "",
-      dataCompra: "",
-      taxas: "",
-      valorDolar: "",
-    });
-    loadItems();
+    setIsLoading(true); // <-- Liga
+    try {
+      const novoItem = {
+        nome_item: item.nome,
+        valor_compra: parseFloat(item.valorCompra.replace(",", ".")),
+        valor_declarado: parseFloat(item.valorDeclarado.replace(",", ".")),
+        peso: parseFloat(item.peso.replace(",", ".")),
+        quantidade: parseInt(item.quantidade),
+        data_compra: item.dataCompra,
+        valor_dolar: parseFloat(item.valorDolar.replace(",", ".")),
+        taxas: parseFloat(item.taxas.replace(",", ".")),
+      };
+
+      await window.electronAPI.addItem(novoItem);
+      setItem({ // Limpa o formulário
+        nome: "",
+        valorCompra: 0,
+        valorDeclarado: 0,
+        peso: 0,
+        quantidade: 0,
+        dataCompra: "",
+        taxas: 0,
+        valorDolar: 0,
+      });
+      await loadItems();
+    } catch (error) {
+      console.error("Erro ao adicionar item:", error);
+      alert("Erro ao salvar novo item.");
+    } finally {
+      setIsLoading(false); // <-- Desliga, não importa o que aconteça
+    }
   };
 
   const handleRemoveItem = async (id) => {
-    await window.electronAPI.deleteItem(id);
-    loadItems();
+    // Pergunta de confirmação
+    if (!window.confirm("Tem certeza que deseja remover este item?")) {
+      return;
+    }
+
+    setIsLoading(true); // <-- Liga
+    try {
+      await window.electronAPI.deleteItem(id);
+      await loadItems();
+    } catch (error) {
+      console.error("Erro ao remover item:", error);
+      alert("Erro ao remover item.");
+    } finally {
+      setIsLoading(false); // <-- Desliga, não importa o que aconteça
+    }
   };
 
   // 3. FUNÇÕES PARA CONTROLAR O MODAL
@@ -91,19 +118,21 @@ export default function Estoque() {
 
 
   const handleSaveEditedItem = async (editedItem) => {
-    setIsLoading(true); // Opcional: desabilita botões enquanto salva
+    setIsLoading(true); // <-- Liga
     try {
       await window.electronAPI.updateItem(editedItem);
-      await loadItems(); // Recarrega todos os itens para atualizar a tabela
-      alert("Item atualizado com sucesso!");
+      await loadItems(); // Recarrega todos os itens
+      // O alert foi removido para um fluxo mais suave,
+      // mas você pode adicionar se quiser
     } catch (error) {
       console.error("Erro ao salvar item editado:", error);
       alert("Erro ao atualizar item.");
+      // Lança o erro para o modal saber que falhou
+      throw error;
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // <-- Desliga, não importa o que aconteça
     }
   };
-
   return (
     <div className="flex h-screen bg-gray-100">
       <SideBar />

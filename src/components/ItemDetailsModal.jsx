@@ -42,8 +42,8 @@ export default function ItemDetailsModal({ item, onClose, onSave }) { // onSave 
   const taxasBRL = editedItem.taxas * editedItem.valorDolar;
 
   // AJUSTE 3: Função para salvar as alterações
-  const handleSave = () => {
-    onSave(editedItem); // Chama a função onSave passada pelo pai
+  const handleSave = async () => {
+    await onSave(editedItem); // Chama a função onSave passada pelo pai
     onClose(); // Fecha o modal após salvar
   };
 
