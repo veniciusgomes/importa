@@ -30,6 +30,7 @@ db.serialize(() => {
   )`);
   db.run(`CREATE TABLE IF NOT EXISTS lotes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT,
   data_criacao DATE,
   valor_dolar FLOAT,
   valor_caixa_uscloser FLOAT,
@@ -107,10 +108,11 @@ ipcMain.handle("salvar-lote", async (event, lote, itens) => {
   const loteId = await new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO lotes (
-  data_criacao, valor_dolar, valor_caixa_uscloser, peso_caixa_uscloser,
+ nome, data_criacao, valor_dolar, valor_caixa_uscloser, peso_caixa_uscloser,
   frete_declarado, seguro, frete_lote, valor_importacao, valor_icms
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        lote.nome, // <-- Novo
         lote.data_criacao,
         lote.valor_dolar,
         lote.valor_caixa_uscloser,
@@ -143,6 +145,7 @@ ipcMain.handle("getLotesComItens", async () => {
     const query = `
       SELECT 
         l.id as lote_id, 
+        l.nome as lote_nome,
         l.data_criacao, 
         l.valor_dolar,
         l.valor_caixa_uscloser,
@@ -167,6 +170,23 @@ ipcMain.handle("getLotesComItens", async () => {
       if (err) reject(err);
       else resolve(rows);
     });
+  });
+});
+
+ipcMain.handle("lote:updateNome", async (event, { id, nome }) => {
+  return new Promise((resolve, reject) => {
+    db.run(
+      `UPDATE lotes SET nome = ? WHERE id = ?`,
+      [nome, id],
+      function (err) {
+        if (err) {
+          console.error("Erro ao atualizar nome do lote:", err);
+          reject(err);
+        } else {
+          resolve({ changes: this.changes });
+        }
+      }
+    );
   });
 });
 
@@ -239,24 +259,57 @@ ipcMain.handle("config:get", () => {
   return getConfig();
 });
 
-// --- FIM DA LÓGICA DE CONFIGURAÇÃO ---
-
 ipcMain.handle("excluirLote", async (event, loteId) => {
+  console.log(`[BACKEND] Recebido pedido para excluir lote ID: ${loteId}`);
+
+  // db.serialize garante que os comandos rodem em ordem,
+  // um após o outro, na mesma "fila".
   return new Promise((resolve, reject) => {
+
     db.serialize(() => {
-      db.run(
-        `DELETE FROM lote_itens WHERE lote_id = ?`,
-        [loteId],
-        function (err) {
-          if (err) return reject(err);
-          db.run(`DELETE FROM lotes WHERE id = ?`, [loteId], function (err2) {
-            if (err2) return reject(err2);
-            resolve({ deleted: this.changes });
-          });
+      // 1. Inicia a transação
+      db.run("BEGIN TRANSACTION;", (err) => {
+        if (err) {
+          console.error("[BACKEND] Erro ao iniciar transação:", err.message);
+          return reject(err);
         }
-      );
+      });
+
+      // 2. Primeiro delete
+      db.run("DELETE FROM lote_itens WHERE lote_id = ?", [loteId], (err) => {
+        if (err) {
+          console.error("[BACKEND] Erro ao deletar de lote_itens:", err.message);
+          db.run("ROLLBACK;"); // Desfaz a transação
+          return reject(err);
+        }
+      });
+
+      // 3. Segundo delete
+      db.run("DELETE FROM lotes WHERE id = ?", [loteId], (err) => {
+        if (err) {
+          console.error("[BACKEND] Erro ao deletar de lotes:", err.message);
+          db.run("ROLLBACK;");
+          return reject(err);
+        }
+      });
+
+      // 4. Finaliza a transação
+      // O 'callback' final do db.run("COMMIT") só roda
+      // quando tudo acima na fila do 'serialize' terminar.
+      db.run("COMMIT;", (err) => {
+        if (err) {
+          console.error("[BACKEND] Erro ao comitar transação:", err.message);
+          db.run("ROLLBACK;");
+          return reject(err);
+        }
+
+        // SÓ RESOLVEMOS A PROMISE AQUI
+        console.log("[BACKEND] Transação concluída com sucesso (via serialize).");
+        resolve({ deleted: true });
+      });
     });
   });
 });
+
 
 module.exports = db;

@@ -1,6 +1,6 @@
 {
   "name": "importa-app",
-  "version": "1.1.1",
+  "version": "1.2.1",
   "description": "Sistema de controle de importação de itens de colecionador",
   "author": "Venicius Gomes Santiago",
   "main": "main.js",
