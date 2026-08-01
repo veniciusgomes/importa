@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +8,182 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+}
+
+// Regime tributário usado para calcular o imposto de um item.
+// PF_RTS: pessoa física, regime de tributação simplificada (remessa).
+// PJ_DUIMP: pessoa jurídica, importação formal (Declaração Única de Importação).
+enum RegimeTributario {
+  PF_RTS
+  PJ_DUIMP
+}
+
+enum StatusItem {
+  COMPRADO
+  RECEBIDO_USCLOSER
+  ENVIADO
+  RECEBIDO_BRASIL
+  VENDIDO
+}
+
+enum StatusEnvio {
+  AGUARDANDO_ITENS
+  ENVIADO_USCLOSER
+  TRANSITO_BRASIL
+  RECEBIDO_BRASIL
+}
+
+// Um envio consolidado pela USCloser, agrupando um ou mais itens.
+model Envio {
+  id             Int         @id @default(autoincrement())
+  codigoRastreio String?
+  status         StatusEnvio @default(AGUARDANDO_ITENS)
+
+  // Snapshot gravado no momento do cálculo do frete (não recalculado
+  // dinamicamente a partir dos itens) — preserva o valor exato usado
+  // naquele envio para fins de compliance.
+  pesoTotalGramas Decimal?
+
+  freteTotalUSD        Decimal?
+  taxaUscloserUSD      Decimal?
+  cotacaoDolarUscloser Decimal?
+
+  tabelaFrete   TabelaFreteUscloser? @relation(fields: [tabelaFreteId], references: [id])
+  tabelaFreteId Int?
+
+  dataEnvioUscloser     DateTime?
+  dataRecebimentoBrasil DateTime?
+
+  itens Item[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Cada unidade comprada. Pode existir sem envio (comprado mas ainda
+// não agrupado em um envio).
+model Item {
+  id      Int    @id @default(autoincrement())
+  envio   Envio? @relation(fields: [envioId], references: [id], onDelete: SetNull)
+  envioId Int?
+
+  nome             String
+  descricao        String?
+  origemPlataforma String?
+  urlAnuncio       String?
+
+  status StatusItem @default(COMPRADO)
+
+  pesoGramas         Decimal
+  valorCompraUSD     Decimal
+  cotacaoDolarCompra Decimal
+  dataCompra         DateTime
+
+  margemLucroPercentual Decimal?
+
+  // Persistido e recalculado quando a margem (ou o custo) muda —
+  // não é calculado sob demanda a cada leitura.
+  precoVendaSugerido Decimal?
+
+  precoVendaReal Decimal?
+  dataVenda      DateTime?
+
+  calculosImposto ItemImpostoCalculo[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Snapshot do cálculo de imposto de um item. Histórico separado do
+// item porque os parâmetros de tributação mudam com o tempo — um
+// recálculo não deve apagar o cálculo anterior.
+model ItemImpostoCalculo {
+  id     Int  @id @default(autoincrement())
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId Int
+
+  regimeConfig   ConfiguracaoRegimeTributario @relation(fields: [regimeConfigId], references: [id])
+  regimeConfigId Int
+
+  icmsConfig   ConfigIcmsEstado @relation(fields: [icmsConfigId], references: [id])
+  icmsConfigId Int
+
+  valorAduaneiroUSD     Decimal
+  valorII               Decimal
+  valorICMS             Decimal
+  valorTotalImpostosUSD Decimal
+
+  // Editável manualmente: valor de imposto efetivamente declarado no
+  // envio para o Brasil, guardado ao lado do valor calculado acima
+  // para permitir comparar calculado vs. declarado (compliance).
+  valorImpostoDeclaradoUSD Decimal?
+
+  calculadoEm DateTime @default(now())
+}
+
+// Configuração parametrizável e versionada por vigência do regime
+// tributário federal (II). Trocar de regime é uma configuração, não
+// uma reescrita de código.
+model ConfiguracaoRegimeTributario {
+  id Int @id @default(autoincrement())
+
+  regime           RegimeTributario
+  aliquotaII       Decimal
+  descontoUSD      Decimal
+  limiteIsencaoUSD Decimal
+  limiteRegimeUSD  Decimal
+
+  vigenciaInicio DateTime
+  vigenciaFim    DateTime?
+
+  calculos ItemImpostoCalculo[]
+}
+
+// Alíquota de ICMS por estado, também versionada por vigência.
+model ConfigIcmsEstado {
+  id Int @id @default(autoincrement())
+
+  uf           String
+  aliquotaICMS Decimal
+
+  vigenciaInicio DateTime
+  vigenciaFim    DateTime?
+
+  calculos ItemImpostoCalculo[]
+}
+
+// Tabela de faixas de peso x valor da USCloser (Packet Standard®),
+// também versionada por vigência.
+model TabelaFreteUscloser {
+  id Int @id @default(autoincrement())
+
+  pesoMinGramas Decimal
+  pesoMaxGramas Decimal
+  valorUSD      Decimal
+
+  vigenciaInicio DateTime
+  vigenciaFim    DateTime?
+
+  envios Envio[]
+}
+
+// Credencial usada pelo scraper para autenticar na área logada da
+// USCloser. A senha é sempre armazenada criptografada.
+model CredencialUscloser {
+  id                    Int       @id @default(autoincrement())
+  usuario               String
+  senhaCriptografada    String
+  ultimaSincronizacaoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Configuração única do sistema (uso pessoal/local, sem múltiplos usuários).
+model ConfiguracaoSistema {
+  id Int @id @default(autoincrement())
+
+  regimeSelecionado RegimeTributario @default(PF_RTS)
+  estadoOperacao    String
+  margemLucroPadrao Decimal?
 }
